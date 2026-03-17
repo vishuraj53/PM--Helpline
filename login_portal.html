@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PM Helpline — Citizen Portal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --saffron: #FF6B00;
+    --saffron-light: #FFF0E6;
+    --navy: #0D2137;
+    --green: #138808;
+    --green-light: #E8F5E4;
+    --white: #FFFFFF;
+    --gray-50: #F9FAFB;
+    --gray-100: #F0F2F5;
+    --gray-200: #E1E4E9;
+    --gray-400: #9CA3AF;
+    --gray-600: #4B5563;
+    --gray-800: #1F2937;
+    --danger: #DC2626;
+    --success: #16A34A;
+    --radius: 12px;
+    --shadow: 0 4px 24px rgba(13,33,55,0.10);
+    --shadow-lg: 0 8px 40px rgba(13,33,55,0.16);
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #F0F4F8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--navy);
+    padding: 0 2rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-emblem {
+    width: 40px; height: 40px;
+    background: var(--saffron);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white;
+  }
+  .logo-text { color: white; font-size: 15px; font-weight: 600; }
+  .logo-sub  { color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 1px; }
+
+  .tricolor { height: 4px; display: flex; }
+  .tc1 { flex:1; background:#FF6B00; }
+  .tc2 { flex:1; background:white; }
+  .tc3 { flex:1; background:#138808; }
+
+  main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+  }
+
+  .portal-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 500px;
+    overflow: hidden;
+  }
+
+  .tabs { display: flex; border-bottom: 1.5px solid var(--gray-200); }
+  .tab {
+    flex: 1; padding: 1rem;
+    font-family: inherit; font-size: 14px; font-weight: 500;
+    color: var(--gray-600);
+    background: none; border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--saffron);
+    box-shadow: inset 0 -2.5px 0 var(--saffron);
+    background: var(--saffron-light);
+  }
+  .tab:hover:not(.active) { background: var(--gray-50); }
+
+  .form-panel { padding: 2rem; display: none; }
+  .form-panel.active { display: block; }
+
+  .panel-title { font-size: 22px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+  .panel-sub   { font-size: 13px; color: var(--gray-400); margin-bottom: 1.75rem; line-height: 1.6; }
+
+  .field { margin-bottom: 1rem; }
+  .field label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--gray-600); margin-bottom: 5px;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .field input, .field select {
+    width: 100%; height: 44px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 0 14px;
+    font-family: inherit; font-size: 14px; color: var(--gray-800);
+    background: white; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 3px rgba(255,107,0,0.12);
+  }
+  .field input::placeholder { color: var(--gray-400); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn-primary {
+    width: 100%; height: 48px;
+    background: var(--navy); color: white;
+    border: none; border-radius: var(--radius);
+    font-family: inherit; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 6px;
+    transition: background 0.2s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover   { background: #162E4A; }
+  .btn-primary:active  { transform: scale(0.99); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 1.25rem 0; color: var(--gray-400); font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--gray-200);
+  }
+
+  .alert {
+    padding: 10px 14px; border-radius: 8px; font-size: 13px;
+    margin-bottom: 1rem; display: none; line-height: 1.5;
+  }
+  .alert.error   { background: #FEF2F2; color: var(--danger);  border-left: 3px solid var(--danger);  display: block; }
+  .alert.success { background: var(--green-light); color: var(--success); border-left: 3px solid var(--success); display: block; }
+
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 56px; }
+  .pw-toggle {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: var(--gray-100); border: none; cursor: pointer;
+    color: var(--gray-600); font-size: 11px; font-weight: 700; font-family: inherit;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .pw-toggle:hover { background: var(--gray-200); }
+
+  .strength-bar  { height: 3px; border-radius: 2px; background: var(--gray-200); margin-top: 6px; overflow: hidden; }
+  .strength-fill { height: 100%; width: 0; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+
+  .link { color: var(--saffron); cursor: pointer; font-weight: 600; }
+  .link:hover { text-decoration: underline; }
+
+  /* DASHBOARD */
+  #dashboard { display: none; flex-direction: column; min-height: 100vh; }
+
+  .dash-header {
+    background: var(--navy);
+    padding: 0 2rem; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .user-chip { display: flex; align-items: center; gap: 10px; }
+  .avatar {
+    width: 36px; height: 36px; background: var(--saffron);
+    border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: 13px; color: white;
+  }
+  .u-name  { color: white; font-size: 13px; font-weight: 600; }
+  .u-email { color: rgba(255,255,255,0.45); font-size: 11px; }
+
+  .btn-logout {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: white; border-radius: 8px; padding: 6px 14px;
+    font-family: inherit; font-size: 13px; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+  .dash-body { flex: 1; padding: 2rem; max-width: 800px; margin: 0 auto; width: 100%; }
+
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--navy) 0%, #1A3A5C 100%);
+    border-radius: 16px; padding: 1.75rem 2rem; color: white; margin-bottom: 1.75rem;
+  }
+  .welcome-banner h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .welcome-banner p  { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: white; border-radius: 12px;
+    padding: 1rem 1.25rem; box-shadow: var(--shadow); text-align: center;
+  }
+  .stat-num   { font-size: 26px; font-weight: 700; color: var(--navy); }
+  .stat-label { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+  .section-card {
+    background: white; border-radius: 16px;
+    padding: 1.75rem; box-shadow: var(--shadow); margin-bottom: 1.5rem;
+  }
+  .section-card h3 { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 1.25rem; }
+
+  .section-card textarea {
+    width: 100%; border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius); padding: 12px 14px;
+    font-family: inherit; font-size: 14px; color: var(--gray-800);
+    resize: vertical; min-height: 110px; outline: none; transition: border-color 0.2s;
+  }
+  .section-card textarea:focus {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 3px rgba(255,107,0,0.10);
+  }
+
+  .btn-submit {
+    background: var(--saffron); color: white;
+    border: none; border-radius: var(--radius);
+    padding: 0 24px; height: 44px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; margin-top: 12px; transition: background 0.2s;
+  }
+  .btn-submit:hover { background: #E05E00; }
+
+  .complaint-list { display: flex; flex-direction: column; gap: 10px; }
+  .complaint-item {
+    border: 1px solid var(--gray-200); border-radius: 10px; padding: 12px 14px;
+  }
+  .ci-text { font-size: 13px; color: var(--gray-800); line-height: 1.55; margin-bottom: 8px; }
+  .ci-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-critical { background:#FEE2E2; color:#991B1B; }
+  .badge-high     { background:#FEF3C7; color:#92400E; }
+  .badge-medium   { background:#DBEAFE; color:#1E3A8A; }
+  .badge-low      { background:var(--green-light); color:#14532D; }
+
+  .meta-tag { font-size: 11px; color: var(--gray-400); }
+
+  footer {
+    text-align: center; padding: 1.25rem;
+    font-size: 12px; color: var(--gray-400);
+    border-top: 1px solid var(--gray-200); background: white;
+  }
+
+  @media (max-width: 520px) {
+    .row { grid-template-columns: 1fr; }
+    header, .dash-header { padding: 0 1rem; }
+    .dash-body { padding: 1rem; }
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-view">
+  <header>
+    <div class="logo">
+      <div class="logo-emblem">PM</div>
+      <div>
+        <div class="logo-text">PM Helpline</div>
+        <div class="logo-sub">Citizen Grievance Portal</div>
+      </div>
+    </div>
+    <span style="color:rgba(255,255,255,0.4);font-size:12px">Government of India</span>
+  </header>
+  <div class="tricolor"><div class="tc1"></div><div class="tc2"></div><div class="tc3"></div></div>
+
+  <main>
+    <div class="portal-card">
+      <div class="tabs">
+        <button class="tab active" id="tab-login"    onclick="switchTab('login')">Sign In</button>
+        <button class="tab"        id="tab-register" onclick="switchTab('register')">Register</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="form-panel active" id="panel-login">
+        <div class="panel-title">Welcome back</div>
+        <div class="panel-sub">Sign in to file and track your grievances.</div>
+        <div class="alert" id="login-alert"></div>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="login-email" placeholder="yourname@email.com" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="login-password" placeholder="Enter your password"
+              onkeydown="if(event.key==='Enter')doLogin()" />
+            <button class="pw-toggle" onclick="togglePw('login-password',this)">SHOW</button>
+          </div>
+        </div>
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">
+          <span id="login-label">Sign In</span>
+          <div class="spinner" id="login-spin"></div>
+        </button>
+        <div class="divider">or</div>
+        <p style="text-align:center;font-size:13px;color:var(--gray-400)">
+          No account? <span class="link" onclick="switchTab('register')">Register here</span>
+        </p>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="form-panel" id="panel-register">
+        <div class="panel-title">Create account</div>
+        <div class="panel-sub">Register as a citizen to submit grievances securely.</div>
+        <div class="alert" id="reg-alert"></div>
+        <div class="row">
+          <div class="field">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" placeholder="Rahul Sharma" />
+          </div>
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="9876543210" maxlength="10" oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Email Address</label>
+          <input type="email" id="reg-email" placeholder="rahul@email.com" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>State</label>
+            <select id="reg-state">
+              <option value="">Select state</option>
+              <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+              <option>Chhattisgarh</option><option>Delhi</option><option>Goa</option>
+              <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+              <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+              <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+              <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+              <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+              <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+              <option>West Bengal</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Aadhaar Number</label>
+            <input type="text" id="reg-aadhaar" placeholder="123456789012" maxlength="12" oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input type="password" id="reg-password" placeholder="Min. 8 characters"
+              oninput="checkStrength(this.value)"
+              onkeydown="if(event.key==='Enter')doRegister()" />
+            <button class="pw-toggle" onclick="togglePw('reg-password',this)">SHOW</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        </div>
+        <button class="btn-primary" id="reg-btn" onclick="doRegister()">
+          <span id="reg-label">Create Account</span>
+          <div class="spinner" id="reg-spin"></div>
+        </button>
+        <div class="divider">or</div>
+        <p style="text-align:center;font-size:13px;color:var(--gray-400)">
+          Already registered? <span class="link" onclick="switchTab('login')">Sign in</span>
+        </p>
+      </div>
+    </div>
+  </main>
+  <footer>© 2025 PM Helpline Portal &nbsp;·&nbsp; Government of India &nbsp;·&nbsp; All rights reserved</footer>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <header class="dash-header">
+    <div class="logo">
+      <div class="logo-emblem">PM</div>
+      <div>
+        <div class="logo-text">PM Helpline</div>
+        <div class="logo-sub">Citizen Grievance Portal</div>
+      </div>
+    </div>
+    <div class="user-chip">
+      <div>
+        <div class="u-name"  id="dash-name"></div>
+        <div class="u-email" id="dash-email"></div>
+      </div>
+      <div class="avatar" id="dash-avatar"></div>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </header>
+  <div class="tricolor"><div class="tc1"></div><div class="tc2"></div><div class="tc3"></div></div>
+
+  <div class="dash-body">
+    <div class="welcome-banner">
+      <h2 id="welcome-msg">Welcome!</h2>
+      <p>You are logged in to the PM Helpline Citizen Portal. Submit and track your grievances below.</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">Total Complaints</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-critical" style="color:#DC2626">0</div>
+        <div class="stat-label">Critical</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-valid" style="color:#138808">0</div>
+        <div class="stat-label">Valid</div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <h3>File a New Complaint</h3>
+      <div class="alert" id="comp-alert"></div>
+      <textarea id="comp-text" placeholder="Describe your grievance — e.g. water shortage, electricity outage, corruption, unemployment…"></textarea>
+      <button class="btn-submit" onclick="submitComplaint()">Submit Complaint</button>
+    </div>
+
+    <div class="section-card">
+      <h3>My Complaints</h3>
+      <div id="my-complaints"><p style="font-size:13px;color:var(--gray-400)">No complaints filed yet.</p></div>
+    </div>
+  </div>
+  <footer>© 2025 PM Helpline Portal &nbsp;·&nbsp; Government of India</footer>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  let TOKEN = localStorage.getItem('pm_token');
+  let USER  = JSON.parse(localStorage.getItem('pm_user') || 'null');
+
+  window.onload = () => { if (TOKEN && USER) showDashboard(USER); };
+
+  function switchTab(tab) {
+    ['login','register'].forEach(t => {
+      document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+      document.getElementById('panel-'+t).classList.toggle('active', t===tab);
+    });
+  }
+
+  function togglePw(id, btn) {
+    const el = document.getElementById(id);
+    const hide = el.type === 'password';
+    el.type = hide ? 'text' : 'password';
+    btn.textContent = hide ? 'HIDE' : 'SHOW';
+  }
+
+  function checkStrength(pw) {
+    const fill = document.getElementById('strength-fill');
+    let s = 0;
+    if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    fill.style.width = (s*25)+'%';
+    fill.style.background = ['#DC2626','#F59E0B','#3B82F6','#16A34A'][s-1] || '#E1E4E9';
+  }
+
+  function showAlert(id, msg, type) {
+    const el = document.getElementById(id);
+    el.className = 'alert '+type;
+    el.textContent = msg;
+    setTimeout(() => { el.className='alert'; }, 6000);
+  }
+
+  function setLoading(prefix, on) {
+    document.getElementById(prefix+'-btn').disabled = on;
+    document.getElementById(prefix+'-label').style.display = on ? 'none' : '';
+    document.getElementById(prefix+'-spin').style.display  = on ? 'block' : 'none';
+  }
+
+  async function doLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showAlert('login-alert','Please fill in all fields.','error'); return; }
+    setLoading('login', true);
+    try {
+      const res  = await fetch(API+'/auth/login', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email, password})
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Login failed');
+      saveSession(data); showDashboard(data.user);
+    } catch(e) { showAlert('login-alert', e.message, 'error'); }
+    finally    { setLoading('login', false); }
+  }
+
+  async function doRegister() {
+    const full_name = document.getElementById('reg-name').value.trim();
+    const email     = document.getElementById('reg-email').value.trim();
+    const phone     = document.getElementById('reg-phone').value.trim();
+    const state     = document.getElementById('reg-state').value;
+    const aadhaar   = document.getElementById('reg-aadhaar').value.trim();
+    const password  = document.getElementById('reg-password').value;
+
+    if (!full_name||!email||!phone||!state||!aadhaar||!password) {
+      showAlert('reg-alert','Please fill in all fields.','error'); return;
+    }
+    if (password.length < 8) { showAlert('reg-alert','Password must be at least 8 characters.','error'); return; }
+    if (aadhaar.length !== 12) { showAlert('reg-alert','Aadhaar must be 12 digits.','error'); return; }
+
+    setLoading('reg', true);
+    try {
+      const res  = await fetch(API+'/auth/register', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({full_name, email, phone, state, aadhaar, password})
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Registration failed');
+      saveSession(data); showDashboard(data.user);
+    } catch(e) { showAlert('reg-alert', e.message, 'error'); }
+    finally    { setLoading('reg', false); }
+  }
+
+  function saveSession(data) {
+    TOKEN = data.token; USER = data.user;
+    localStorage.setItem('pm_token', TOKEN);
+    localStorage.setItem('pm_user', JSON.stringify(USER));
+  }
+
+  function showDashboard(user) {
+    document.getElementById('auth-view').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'flex';
+    const initials = user.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('dash-avatar').textContent = initials;
+    document.getElementById('dash-name').textContent   = user.full_name;
+    document.getElementById('dash-email').textContent  = user.email;
+    document.getElementById('welcome-msg').textContent = 'Welcome, '+user.full_name.split(' ')[0]+'!';
+    loadComplaints();
+  }
+
+  function logout() {
+    localStorage.removeItem('pm_token');
+    localStorage.removeItem('pm_user');
+    TOKEN = null; USER = null;
+    document.getElementById('dashboard').style.display  = 'none';
+    document.getElementById('auth-view').style.display  = 'block';
+    document.getElementById('login-email').value    = '';
+    document.getElementById('login-password').value = '';
+  }
+
+  async function submitComplaint() {
+    const text = document.getElementById('comp-text').value.trim();
+    if (!text) { showAlert('comp-alert','Please describe your grievance.','error'); return; }
+    const form = new FormData();
+    form.append('text', text);
+    try {
+      const res  = await fetch(API+'/submit', {
+        method:'POST', headers:{'Authorization':'Bearer '+TOKEN}, body:form
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Failed to submit');
+      showAlert('comp-alert','Complaint submitted successfully!','success');
+      document.getElementById('comp-text').value = '';
+      loadComplaints();
+    } catch(e) { showAlert('comp-alert', e.message, 'error'); }
+  }
+
+  async function loadComplaints() {
+    try {
+      const res  = await fetch(API+'/my-complaints', {headers:{'Authorization':'Bearer '+TOKEN}});
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('stat-total').textContent    = data.length;
+      document.getElementById('stat-critical').textContent = data.filter(c=>c.priority==='Critical').length;
+      document.getElementById('stat-valid').textContent    = data.filter(c=>c.validity==='Valid').length;
+      const container = document.getElementById('my-complaints');
+      if (!data.length) {
+        container.innerHTML = '<p style="font-size:13px;color:var(--gray-400)">No complaints filed yet.</p>';
+        return;
+      }
+      container.innerHTML = '<div class="complaint-list">'+
+        [...data].reverse().map(c => {
+          const p   = (c.priority||'low').toLowerCase();
+          const date = c.submitted_at ? new Date(c.submitted_at).toLocaleDateString('en-IN') : '';
+          const txt  = c.text.length>150 ? c.text.slice(0,150)+'…' : c.text;
+          return `<div class="complaint-item">
+            <div class="ci-text">${txt}</div>
+            <div class="ci-meta">
+              <span class="badge badge-${p}">${c.priority||'Low'}</span>
+              <span class="meta-tag">${c.sentiment||''}</span>
+              <span class="meta-tag">${c.validity||''}</span>
+              <span class="meta-tag">${date}</span>
+            </div>
+          </div>`;
+        }).join('')+'</div>';
+    } catch(e) {}
+  }
+</script>
+</body>
+</html>

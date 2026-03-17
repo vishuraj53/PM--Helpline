@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pymongo
+textblob
+passlib[bcrypt]
+pyjwt
+pydantic[email]
+python-multipart
+joblib
+xgboost
+scikit-learn
